@@ -1,11 +1,13 @@
-"""
-FastAPI endpoints for member authentication, workout plans, and coach view.
-"""
+"""FastAPI endpoints for member authentication, workout plans, and feedback."""
 
 import json
+import hashlib
+import logging
 import os
 import re
 import secrets
+from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -15,18 +17,25 @@ from sqlalchemy.orm import Session
 
 from app.auth import hash_password, verify_password
 from app.database import get_db
+from app.diet_chat import generate_diet_reply
 from app.gemini_flash_generator import generate_nutrition_tip
 from app.gemini_generator import generate_workout_plan
-from app.models import User, UserFeedback, WorkoutPlan
+from app.models import DietChatMessage, User, UserFeedback, WorkoutPlan
+from app.models import PasswordResetToken
+from app.password_reset import send_password_reset_email
 from app.updated_plan import generate_updated_plan
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+logger = logging.getLogger(__name__)
 
 GOALS = {"Weight Loss", "Muscle Gain", "General Wellness"}
 INTENSITIES = {"Low", "Medium", "High"}
 FEEDBACK_CATEGORIES = {"Workout plan", "Website experience", "Gemini AI", "Other"}
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+FEEDBACK_VIEWER_EMAIL = "cvimalcvimal0@gmail.com"
+PASSWORD_RESET_LIFETIME = timedelta(minutes=30)
+PASSWORD_RESET_RESEND_WAIT = timedelta(minutes=1)
 
 
 def get_signed_in_user(request: Request, db: Session) -> User | None:
@@ -38,6 +47,21 @@ def get_signed_in_user(request: Request, db: Session) -> User | None:
 
 def sign_in_redirect() -> RedirectResponse:
     return RedirectResponse(url="/login?error=required", status_code=303)
+
+
+def _get_valid_password_reset(db: Session, raw_token: str) -> PasswordResetToken | None:
+    if not raw_token or len(raw_token) > 200:
+        return None
+    token_digest = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+    return (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.token_digest == token_digest,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > datetime.utcnow(),
+        )
+        .first()
+    )
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -52,8 +76,137 @@ def login_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={"error": errors.get(request.query_params.get("error", ""))},
+        context={
+            "error": errors.get(request.query_params.get("error", "")),
+            "notice": "Your password has been reset. Sign in with your new password."
+            if request.query_params.get("reset") == "1"
+            else None,
+        },
     )
+
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+def forgot_password_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="forgot_password.html",
+        context={"submitted": request.query_params.get("submitted") == "1"},
+    )
+
+
+@router.post("/forgot-password")
+def request_password_reset(
+    request: Request,
+    email: str = Form(..., min_length=3, max_length=254),
+    db: Session = Depends(get_db),
+):
+    normalized_email = email.strip().casefold()
+    user = db.query(User).filter(User.email == normalized_email).first()
+    now = datetime.utcnow()
+    if user and user.password_hash:
+        latest = (
+            db.query(PasswordResetToken)
+            .filter(PasswordResetToken.user_id == user.id)
+            .order_by(PasswordResetToken.created_at.desc())
+            .first()
+        )
+        if not latest or now - latest.created_at >= PASSWORD_RESET_RESEND_WAIT:
+            db.query(PasswordResetToken).filter(
+                PasswordResetToken.user_id == user.id,
+                PasswordResetToken.used_at.is_(None),
+            ).update({"used_at": now}, synchronize_session=False)
+            raw_token = secrets.token_urlsafe(32)
+            token_record = PasswordResetToken(
+                user_id=user.id,
+                token_digest=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+                expires_at=now + PASSWORD_RESET_LIFETIME,
+            )
+            db.add(token_record)
+            db.commit()
+            base_url = os.getenv("PUBLIC_BASE_URL", "").strip().rstrip("/")
+            parsed_base_url = urlparse(base_url)
+            if parsed_base_url.scheme == "https" and parsed_base_url.netloc:
+                send_password_reset_email(
+                    user.email,
+                    f"{base_url}/reset-password#token={raw_token}",
+                )
+            else:
+                logger.error("Password reset email not sent: PUBLIC_BASE_URL must be an HTTPS URL.")
+        else:
+            db.rollback()
+
+    return RedirectResponse(url="/forgot-password?submitted=1", status_code=303)
+
+
+@router.get("/reset-password", response_class=HTMLResponse)
+def reset_password_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="reset_password.html",
+        context={
+            "token": "",
+            "valid": False,
+            "awaiting_token": True,
+            "updated": request.query_params.get("updated") == "1",
+        },
+    )
+
+
+@router.post("/reset-password", response_class=HTMLResponse)
+def reset_password(
+    request: Request,
+    token: str = Form(..., min_length=20, max_length=200),
+    password: str = Form(..., min_length=10, max_length=128),
+    password_confirm: str = Form(..., max_length=128),
+    db: Session = Depends(get_db),
+):
+    reset_record = _get_valid_password_reset(db, token)
+    valid = reset_record is not None
+    error = None
+    if valid and password != password_confirm:
+        error = "Those passwords don't match."
+    elif valid and not password.strip():
+        error = "Choose a password that is not blank."
+
+    if not valid or error:
+        return templates.TemplateResponse(
+            request=request,
+            name="reset_password.html",
+            context={
+                "token": token,
+                "valid": valid,
+                "awaiting_token": False,
+                "updated": False,
+                "error": error or "This reset link is invalid or expired. Request a new one.",
+            },
+            status_code=400,
+        )
+
+    claimed = (
+        db.query(PasswordResetToken)
+        .filter(
+            PasswordResetToken.id == reset_record.id,
+            PasswordResetToken.used_at.is_(None),
+            PasswordResetToken.expires_at > datetime.utcnow(),
+        )
+        .update({"used_at": datetime.utcnow()}, synchronize_session=False)
+    )
+    if claimed != 1:
+        db.rollback()
+        return RedirectResponse(url="/forgot-password?submitted=1", status_code=303)
+
+    user = db.query(User).filter(User.id == reset_record.user_id).first()
+    if not user:
+        db.rollback()
+        return RedirectResponse(url="/forgot-password?submitted=1", status_code=303)
+    now = datetime.utcnow()
+    user.password_hash = hash_password(password)
+    db.query(PasswordResetToken).filter(
+        PasswordResetToken.user_id == user.id,
+        PasswordResetToken.used_at.is_(None),
+    ).update({"used_at": now}, synchronize_session=False)
+    db.commit()
+    return RedirectResponse(url="/login?reset=1", status_code=303)
 
 
 @router.post("/login")
@@ -282,38 +435,92 @@ def submit_user_feedback(
     return RedirectResponse(url="/feedback?submitted=1", status_code=303)
 
 
-@router.get("/view-all-users", response_class=HTMLResponse)
-def view_all_users(request: Request, db: Session = Depends(get_db)):
+@router.get("/feedback-inbox", response_class=HTMLResponse)
+def feedback_inbox(request: Request, db: Session = Depends(get_db)):
     user = get_signed_in_user(request, db)
     if not user:
         return sign_in_redirect()
-    coach_emails = {
-        email.strip().casefold()
-        for email in os.getenv("COACH_EMAILS", "").split(",")
-        if email.strip()
-    }
-    if not user.email or user.email.casefold() not in coach_emails:
-        return HTMLResponse("Coach access is not enabled for this account.", status_code=403)
-
-    users = db.query(User).all()
-    records = []
-    for user in users:
-        latest_plan = (
-            db.query(WorkoutPlan)
-            .filter(WorkoutPlan.user_id == user.id)
-            .order_by(WorkoutPlan.id.desc())
-            .first()
-        )
-        records.append({"user": user, "plan": latest_plan})
+    if not user.email or user.email.casefold() != FEEDBACK_VIEWER_EMAIL:
+        return HTMLResponse("Feedback inbox access is not enabled for this account.", status_code=403)
 
     feedback_entries = (
         db.query(UserFeedback)
+        .join(User)
         .order_by(UserFeedback.created_at.desc())
         .limit(100)
         .all()
     )
     return templates.TemplateResponse(
         request=request,
-        name="all_users.html",
-        context={"records": records, "feedback_entries": feedback_entries},
+        name="feedback_inbox.html",
+        context={"user": user, "feedback_entries": feedback_entries},
     )
+
+
+@router.get("/diet-chat", response_class=HTMLResponse)
+def diet_chat_page(request: Request, db: Session = Depends(get_db)):
+    user = get_signed_in_user(request, db)
+    if not user:
+        return sign_in_redirect()
+    messages = (
+        db.query(DietChatMessage)
+        .filter(DietChatMessage.user_id == user.id)
+        .order_by(DietChatMessage.id.desc())
+        .limit(40)
+        .all()
+    )
+    messages.reverse()
+    return templates.TemplateResponse(
+        request=request,
+        name="diet_chat.html",
+        context={
+            "user": user,
+            "messages": messages,
+            "reply_mode": request.query_params.get("reply"),
+        },
+    )
+
+
+@router.post("/diet-chat")
+def send_diet_chat_message(
+    request: Request,
+    message: str = Form(..., min_length=1, max_length=1200),
+    db: Session = Depends(get_db),
+):
+    user = get_signed_in_user(request, db)
+    if not user:
+        return sign_in_redirect()
+    clean_message = message.strip()
+    if not clean_message:
+        return RedirectResponse(url="/diet-chat?error=empty", status_code=303)
+
+    recent_messages = (
+        db.query(DietChatMessage)
+        .filter(DietChatMessage.user_id == user.id)
+        .order_by(DietChatMessage.id.desc())
+        .limit(12)
+        .all()
+    )
+    history = [(item.role, item.content) for item in reversed(recent_messages)]
+    history.append(("user", clean_message))
+    reply, used_ai = generate_diet_reply(history)
+
+    db.add_all([
+        DietChatMessage(user_id=user.id, role="user", content=clean_message),
+        DietChatMessage(user_id=user.id, role="assistant", content=reply),
+    ])
+    db.commit()
+    return RedirectResponse(
+        url=f"/diet-chat?reply={'ai' if used_ai else 'fallback'}",
+        status_code=303,
+    )
+
+
+@router.post("/diet-chat/clear")
+def clear_diet_chat(request: Request, db: Session = Depends(get_db)):
+    user = get_signed_in_user(request, db)
+    if not user:
+        return sign_in_redirect()
+    db.query(DietChatMessage).filter(DietChatMessage.user_id == user.id).delete()
+    db.commit()
+    return RedirectResponse(url="/diet-chat?cleared=1", status_code=303)

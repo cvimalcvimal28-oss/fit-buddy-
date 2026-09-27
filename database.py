@@ -8,9 +8,22 @@ import os
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./fitbuddy.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or "sqlite:///./fitbuddy.db"
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine_options = {"connect_args": {"check_same_thread": False}} if DATABASE_URL.startswith("sqlite") else {}
+engine_options = {"pool_pre_ping": True}
+if DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
+else:
+    engine_options.update(
+        pool_size=max(1, int(os.getenv("DB_POOL_SIZE", "5"))),
+        max_overflow=max(0, int(os.getenv("DB_MAX_OVERFLOW", "10"))),
+        pool_timeout=max(1, int(os.getenv("DB_POOL_TIMEOUT", "30"))),
+        pool_recycle=max(60, int(os.getenv("DB_POOL_RECYCLE", "1800"))),
+    )
 engine = create_engine(DATABASE_URL, **engine_options)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
