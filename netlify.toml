@@ -1,0 +1,11 @@
+[build]
+  command = "mkdir -p netlify-site/static && cp -R static/css static/js static/images netlify-site/static/"
+  publish = "netlify-site"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
