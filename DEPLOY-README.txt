@@ -1,13 +1,14 @@
-FitBuddy - Render upload bundle
+FitBuddy Render Web Service
 
-Upload the contents of this ZIP to the ROOT of your GitHub repository. Keep
-the app, templates, and static folders intact beside requirements.txt.
+Upload the ZIP contents to the GitHub repository root, preserving app/,
+templates/, and static/ folders.
+Build: pip install -r requirements.txt
+Start: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
-Render Web Service:
-Build Command: pip install -r requirements.txt
-Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-
-Set SESSION_SECRET to a long random value and COOKIE_SECURE=true in Render.
-Set GOOGLE_API_KEY privately in Render if using Gemini. Never commit secrets.
-SQLite on a free web service is temporary and account data may disappear on
-restart or redeploy. Do not upload .env, fitbuddy.db, venv, or __pycache__.
+In Render Environment, set SESSION_SECRET to a long random value and
+COOKIE_SECURE=true. Set GOOGLE_API_KEY privately if using Gemini.
+Password reset emails also require PUBLIC_BASE_URL (HTTPS), SMTP_HOST,
+SMTP_PORT (usually 587), SMTP_USERNAME, SMTP_PASSWORD (app password), and
+SMTP_FROM_EMAIL. Never commit those credentials.
+SQLite on a free web service is temporary. Never upload .env, fitbuddy.db,
+venv, or __pycache__.

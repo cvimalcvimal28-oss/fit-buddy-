@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Review member feedback submitted to FitBuddy.">
+  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <title>FitBuddy — Feedback inbox</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="FitBuddy home">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="/">Build a plan</a>
+      <a href="/diet-chat">Diet chat</a>
+      <a href="/feedback">Feedback</a>
+      <a class="active" href="/feedback-inbox">Feedback inbox</a>
+    </nav>
+    <div class="header-actions">
+      <div class="header-status"><span></span> MEMBER FEEDBACK</div>
+      <form action="/logout" method="post"><button class="logout-button" type="submit">Sign out</button></form>
+    </div>
+  </header>
+
+  <main class="wrap coach-wrap">
+    <section class="result-intro">
+      <p class="eyebrow"><span>FITBUDDY / INBOX</span> / MEMBER VOICES</p>
+      <h1>Feedback from<br><em>the community.</em></h1>
+      <p>Recent feedback shared by FitBuddy members.</p>
+    </section>
+
+    <div class="coach-heading">
+      <h2 class="section-heading">Member feedback</h2>
+      <span class="roster-count">{{ feedback_entries|length }} RECENT{% if feedback_entries|length == 100 %}+{% endif %} RESPONSES</span>
+    </div>
+
+    {% if feedback_entries %}
+    <div class="feedback-inbox">
+      {% for entry in feedback_entries %}
+      <article class="feedback-entry">
+        <div class="feedback-entry-head">
+          <div><strong>{{ entry.user.name }}</strong><span>{{ entry.user.email }}</span></div>
+          <time datetime="{{ entry.created_at.isoformat() }}">{{ entry.created_at.strftime("%b %d, %Y") }}</time>
+        </div>
+        <p class="feedback-entry-rating" aria-label="Rating: {{ entry.rating }} out of 5">
+          {% for star in range(1, 6) %}{% if star <= entry.rating %}★{% else %}<span>★</span>{% endif %}{% endfor %}
+          <span class="feedback-category">{{ entry.category }}</span>
+        </p>
+        <p class="feedback-entry-message">{{ entry.message }}</p>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state feedback-empty-state">
+      <h2>No feedback yet.</h2>
+      <p>Member feedback will appear here after someone submits the form.</p>
+    </div>
+    {% endif %}
+
+    <a class="back-link" href="/">← Back to your training</a>
+  </main>
+
+  <footer class="site-foot">
+    <a class="footer-brand" href="/" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="/feedback">Share feedback ↗</a>
+  </footer>
+</body>
+</html>

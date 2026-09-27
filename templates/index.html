@@ -25,7 +25,11 @@
     </a>
     <nav aria-label="Main navigation">
       <a class="active" href="/">Build a plan</a>
+      <a href="/diet-chat">Diet chat</a>
       <a href="/feedback">Feedback</a>
+      {% if user.email and user.email|lower == "cvimalcvimal0@gmail.com" %}
+      <a href="/feedback-inbox">Feedback inbox</a>
+      {% endif %}
     </nav>
     <div class="header-actions">
       <div class="header-status"><span></span> YOUR TRAINING STARTS HERE</div>

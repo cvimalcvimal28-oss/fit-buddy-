@@ -50,6 +50,7 @@
       </div>
       <p class="card-sub">Sign in with the email you used to create your account.</p>
       {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+      {% if notice %}<p class="feedback-success" role="status">{{ notice }}</p>{% endif %}
       <form action="/login" method="post">
         <div class="field">
           <label for="email">EMAIL ADDRESS</label>
@@ -66,6 +67,7 @@
           <button type="submit" class="btn"><span>Sign in to FitBuddy</span><span aria-hidden="true">↗</span></button>
         </div>
       </form>
+      <p class="auth-switch"><a href="/forgot-password">Forgot your password?</a></p>
       <p class="auth-switch">New to FitBuddy? <a href="/register">Create your account</a></p>
     </section>
   </main>
