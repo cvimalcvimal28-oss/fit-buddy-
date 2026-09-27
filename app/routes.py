@@ -1,9 +1,6 @@
-"""
-FastAPI endpoints for member authentication, workout plans, and coach view.
-"""
+"""FastAPI endpoints for member authentication, workout plans, and feedback."""
 
 import json
-import os
 import re
 import secrets
 
@@ -281,39 +278,3 @@ def submit_user_feedback(
     db.commit()
     return RedirectResponse(url="/feedback?submitted=1", status_code=303)
 
-
-@router.get("/view-all-users", response_class=HTMLResponse)
-def view_all_users(request: Request, db: Session = Depends(get_db)):
-    user = get_signed_in_user(request, db)
-    if not user:
-        return sign_in_redirect()
-    coach_emails = {
-        email.strip().casefold()
-        for email in os.getenv("COACH_EMAILS", "").split(",")
-        if email.strip()
-    }
-    if not user.email or user.email.casefold() not in coach_emails:
-        return HTMLResponse("Coach access is not enabled for this account.", status_code=403)
-
-    users = db.query(User).all()
-    records = []
-    for user in users:
-        latest_plan = (
-            db.query(WorkoutPlan)
-            .filter(WorkoutPlan.user_id == user.id)
-            .order_by(WorkoutPlan.id.desc())
-            .first()
-        )
-        records.append({"user": user, "plan": latest_plan})
-
-    feedback_entries = (
-        db.query(UserFeedback)
-        .order_by(UserFeedback.created_at.desc())
-        .limit(100)
-        .all()
-    )
-    return templates.TemplateResponse(
-        request=request,
-        name="all_users.html",
-        context={"records": records, "feedback_entries": feedback_entries},
-    )
