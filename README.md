@@ -18,6 +18,13 @@ tip, and revisions based on member feedback. Built-in fallbacks keep the app
 demonstrable when Gemini is unavailable; generated fitness guidance is a
 starting point, not a substitute for professional medical advice.
 
+Signed-in members can use `/diet-chat` for general balanced meal ideas. Chat
+history is private to each account and can be cleared from the chat page. Gemini
+replies require `GOOGLE_API_KEY`; without it, a clearly labeled general fallback
+is shown. Avoid entering sensitive health details. The chat is not medical
+advice, and individualized nutrition needs should be discussed with a qualified
+clinician or registered dietitian.
+
 ## Setup
 
 ```bash
@@ -26,20 +33,52 @@ source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` and add your real key:
+Copy `.env.example` to `.env` and add your private settings:
 
 ```
 GOOGLE_API_KEY=your_gemini_api_key_here
 SESSION_SECRET=your_unique_random_secret
 COOKIE_SECURE=false
-COACH_EMAILS=coach@example.com
 ```
 
 Never commit the real `.env` file — it's already in `.gitignore`.
 Generate a session secret with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
-For production, use HTTPS and set `COOKIE_SECURE=true`. `COACH_EMAILS` is an
-optional comma-separated allowlist for the coach roster; the roster is
-disabled when it is empty.
+For production, use HTTPS and set `COOKIE_SECURE=true`.
+
+### Email OTP, bot checks, and mobile verification
+
+Password recovery sends a six-digit email OTP that expires after 30 minutes
+and locks after five incorrect attempts. Gmail delivery uses SMTP; enable
+2-Step Verification on the sender account and create a Google App Password.
+Never use or share your regular Gmail password.
+
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-sender@gmail.com
+SMTP_PASSWORD=your-google-app-password
+SMTP_FROM_EMAIL=your-sender@gmail.com
+```
+
+Cloudflare Turnstile protects login, registration, and reset-code requests.
+Create a Turnstile site and add `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY`.
+For production, set `REQUIRE_TURNSTILE=true`; missing keys then fail closed.
+When `COOKIE_SECURE=true`, Turnstile and mobile OTP are required by default
+unless their respective `REQUIRE_*` setting explicitly overrides that default.
+
+To require a verified mobile number at new account registration and an SMS
+second factor at each sign-in, configure a Twilio Verify service and set
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_VERIFY_SERVICE_SID`.
+Set `REQUIRE_MOBILE_OTP=true` to require a phone number for new registrations
+and every sign-in.
+Existing members can sign in and enroll a number from the FitBuddy home page.
+Numbers must be in international format (for example, `+14155552671`).
+
+Add every setting as a private environment variable in Render; do not commit
+real credentials. The Render Blueprint declares the required settings and
+`REQUIRE_TURNSTILE=true`, so configure the real Turnstile keys, Twilio Verify,
+and Gmail SMTP settings before deploying to production; without these, login
+verification or code delivery will be blocked by design.
 
 ## Run
 
@@ -106,30 +145,58 @@ such as the Render configuration below.
 
    `.env`, the local SQLite database, and virtual environments are excluded by
    `.gitignore`. Never add API keys to source code or GitHub.
-2. In Render, choose **New → Blueprint**, connect the GitHub repository, and
-   apply the included `render.yaml`. Add `GOOGLE_API_KEY` as a secret and set
-   `COACH_EMAILS` to your coach login in the Render dashboard. The blueprint
-   uses a persistent disk for SQLite; that requires a Render plan that
-   supports disks.
+2. For the included Blueprint, connect the repository and apply `render.yaml`.
+   That configuration uses a paid web service and persistent disk for SQLite.
+   For a free test deployment, create a Web Service manually instead; its
+   filesystem is temporary, so do not rely on local SQLite for account storage.
 3. When deployment finishes, open the public `*.onrender.com` URL. For a
    custom domain, add it in Render and follow its DNS/HTTPS instructions.
 
+### Keeping logins and improving availability
+
+If a member registered on a different deployment or on a free service whose
+SQLite file was lost after a restart/redeploy, that account is not in the live
+database, so its old password cannot sign in. Check the Render service's
+**Events/Logs** and confirm you are using the same service URL where that
+account was created. Do not ask members to send you passwords. With a fresh
+database they must register again; with an existing account use password reset.
+
+For account data to survive restarts and for multiple app instances to share
+the same users, create a managed PostgreSQL database and set its private
+connection string as `DATABASE_URL` in the Render Web Service environment.
+The app accepts a standard `postgresql://` URL and uses SQLAlchemy connection
+pooling. Switching from SQLite to PostgreSQL does not copy old accounts; migrate
+the data safely or have members register again. Keep the same `SESSION_SECRET`
+across all deploys/instances so sign-in cookies remain valid.
+
+Render Free Web Services sleep after inactivity and may take about a minute to
+wake, and local files are temporary. They are suitable for demos, not a promise
+of high availability or unlimited concurrent users. For more simultaneous
+traffic, use an always-on paid instance, managed PostgreSQL, and increase
+`DB_POOL_SIZE`/`DB_MAX_OVERFLOW` only within the database provider's connection
+limit. Configure Render's health check path as `/healthz`.
+
 Before publishing, replace any API key that has been shared in chat or other
-public places. For a larger production audience, move from SQLite to a managed
-database and add account recovery and login rate limiting.
+public places. Configure SMTP, Twilio, and Turnstile credentials privately in
+Render for email recovery, SMS sign-in verification, and bot protection.
 
 ## Routes
 
 | Route              | Method | Purpose                              |
 |---------------------|--------|----------------------------------------|
 | `/login`            | GET/POST | Email and password sign-in              |
+| `/forgot-password`  | GET/POST | Request a one-time email recovery code |
+| `/reset-password`   | GET/POST | Validate the email code and set a new password |
 | `/register`         | GET/POST | Create an account and profile            |
+| `/verify-mobile`    | GET/POST | Verify the SMS code during registration or sign-in |
+| `/verify-mobile/enroll` | GET/POST | Verify a phone for an existing member |
 | `/logout`           | POST   | Sign out                               |
 | `/`                 | GET    | Member training card (sign-in required)|
 | `/generate-workout` | POST   | Generates the 7-day plan + tip         |
 | `/submit-feedback`  | POST   | Revises a member's plan from feedback   |
 | `/feedback`         | GET/POST | Collects member experience feedback      |
-| `/view-all-users`   | GET    | Coach roster (coach email allowlist)     |
+| `/feedback-inbox`   | GET    | Private member feedback inbox for the designated account |
+| `/diet-chat`        | GET/POST | Private general meal-planning chat (Gemini when configured) |
 
 ## Project Structure
 
@@ -143,6 +210,8 @@ FitBuddy/
 │   ├── gemini_flash_generator.py
 │   ├── updated_plan.py
 │   ├── database.py
+│   ├── password_reset.py
+│   ├── verification.py
 │   └── models.py
 ├── templates/
 │   ├── login.html
@@ -150,7 +219,6 @@ FitBuddy/
 │   ├── index.html
 │   ├── result.html
 │   ├── feedback.html
-│   └── all_users.html
 ├── static/
 │   ├── css/style.css, netlify.css
 │   ├── js/app.js, netlify-app.js

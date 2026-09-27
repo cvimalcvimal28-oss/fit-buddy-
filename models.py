@@ -23,6 +23,7 @@ class User(Base):
     fitness_goal = Column(String, nullable=False)
     workout_intensity = Column(String, nullable=False)
     password_hash = Column(String(256), nullable=True)
+    mobile_phone = Column(String(20), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     plans = relationship("WorkoutPlan", back_populates="user", cascade="all, delete-orphan")
@@ -76,6 +77,25 @@ class PasswordResetToken(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     token_digest = Column(String(64), unique=True, nullable=False, index=True)
+    token_salt = Column(String(32), nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
     expires_at = Column(DateTime, nullable=False)
     used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class PendingRegistration(Base):
+    __tablename__ = "pending_registrations"
+
+    id = Column(String(64), primary_key=True)
+    user_id = Column(String(32), unique=True, nullable=False)
+    email = Column(String(254), nullable=False, unique=True, index=True)
+    phone = Column(String(20), nullable=False)
+    name = Column(String(80), nullable=False)
+    age = Column(Integer, nullable=False)
+    weight = Column(Integer, nullable=False)
+    fitness_goal = Column(String, nullable=False)
+    workout_intensity = Column(String, nullable=False)
+    password_hash = Column(String(256), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

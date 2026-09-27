@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#100d18">
   <meta name="description" content="Create your FitBuddy account and training profile.">
-  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <link rel="icon" type="image/svg+xml" href="/static/images/fitbuddy-logo.svg">
   <title>Create account — FitBuddy</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  {% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
   <script src="/static/js/app.js" defer></script>
 </head>
 <body class="auth-page">
@@ -20,7 +21,7 @@
   <div class="hazard-bar"></div>
   <header class="masthead">
     <a class="brand" href="/login" aria-label="FitBuddy sign in">
-      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.svg" alt="FitBuddy">
     </a>
     <nav aria-label="Main navigation">
       <a href="/login">Sign in</a>
@@ -58,6 +59,11 @@
         <div class="field">
           <label for="email">EMAIL ADDRESS</label>
           <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" maxlength="254" required>
+        </div>
+        <div class="field">
+          <label for="mobile_phone">MOBILE NUMBER <span class="unit">WITH COUNTRY CODE</span></label>
+          <input type="tel" id="mobile_phone" name="mobile_phone" placeholder="+14155552671" autocomplete="tel" maxlength="20" pattern="\+[1-9][0-9\s().-]{7,20}" {% if require_mobile_otp %}required{% endif %}>
+          <p class="field-hint">Adding a number verifies it by SMS and enables a code at every sign-in.</p>
         </div>
         <div class="row-two">
           <div class="field">
@@ -101,6 +107,12 @@
             <button class="password-toggle" type="button" data-password-toggle aria-controls="password_confirm" aria-pressed="false"><span>Show</span></button>
           </div>
         </div>
+        {% if turnstile_site_key %}
+        <div class="field human-check"><div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div></div>
+        <p class="field-hint">Protected by Cloudflare Turnstile human verification.</p>
+        {% elif require_turnstile %}
+        <p class="auth-error" role="alert">Human verification is being configured. Please try again later.</p>
+        {% endif %}
         <div class="form-footer auth-submit">
           <button type="submit" class="btn"><span>Create my account</span><span aria-hidden="true">↗</span></button>
         </div>
@@ -110,7 +122,7 @@
   </main>
 
   <footer class="site-foot">
-    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a>
+    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.svg" alt="FitBuddy"></a>
     <span>SHOW UP FOR YOURSELF.</span>
     <a href="/login">Sign in ↗</a>
   </footer>

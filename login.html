@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#100d18">
-  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <link rel="icon" type="image/svg+xml" href="/static/images/fitbuddy-logo.svg">
   <meta name="description" content="Sign in to your FitBuddy training plan.">
   <title>Sign in — FitBuddy</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  {% if turnstile_site_key %}<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>{% endif %}
   <script src="/static/js/app.js" defer></script>
 </head>
 <body class="auth-page">
@@ -20,7 +21,7 @@
   <div class="hazard-bar"></div>
   <header class="masthead">
     <a class="brand" href="/login" aria-label="FitBuddy sign in">
-      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.svg" alt="FitBuddy">
     </a>
     <nav aria-label="Main navigation">
       <a class="active" href="/login">Sign in</a>
@@ -32,7 +33,7 @@
   <main class="auth-layout">
     <section class="hero-copy auth-copy">
       <p class="eyebrow"><span>WELCOME BACK</span> / YOUR NEXT SESSION AWAITS</p>
-      <h1>Good to<br>see <em>you.</em></h1>
+      <h1><span class="auth-title-line">Good to</span><br><em class="auth-title-line auth-title-accent">see you.</em></h1>
       <p class="hero-description">Sign in to pick up where you left off. Your training profile and plans are right here.</p>
       <div class="hero-proof">
         <div class="proof-icon" aria-hidden="true">✳</div>
@@ -48,8 +49,9 @@
         </div>
         <span class="card-index" aria-hidden="true">FB / 01</span>
       </div>
-      <p class="card-sub">Sign in with the email you used to create your account.</p>
+      <p class="card-sub">Sign in with your email and password. Accounts with a verified mobile number also confirm an SMS code.</p>
       {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+      {% if notice %}<p class="feedback-success" role="status">{{ notice }}</p>{% endif %}
       <form action="/login" method="post">
         <div class="field">
           <label for="email">EMAIL ADDRESS</label>
@@ -62,16 +64,23 @@
             <button class="password-toggle" type="button" data-password-toggle aria-controls="password" aria-pressed="false"><span>Show</span></button>
           </div>
         </div>
+        {% if turnstile_site_key %}
+        <div class="field human-check"><div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div></div>
+        <p class="field-hint">Protected by Cloudflare Turnstile human verification.</p>
+        {% elif require_turnstile %}
+        <p class="auth-error" role="alert">Human verification is being configured. Please try again later.</p>
+        {% endif %}
         <div class="form-footer auth-submit">
           <button type="submit" class="btn"><span>Sign in to FitBuddy</span><span aria-hidden="true">↗</span></button>
         </div>
       </form>
+      <p class="auth-switch"><a href="/forgot-password">Forgot your password?</a></p>
       <p class="auth-switch">New to FitBuddy? <a href="/register">Create your account</a></p>
     </section>
   </main>
 
   <footer class="site-foot">
-    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a>
+    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.svg" alt="FitBuddy"></a>
     <span>SHOW UP FOR YOURSELF.</span>
     <a href="/register">Create account ↗</a>
   </footer>

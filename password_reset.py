@@ -9,8 +9,8 @@ from email.message import EmailMessage
 logger = logging.getLogger(__name__)
 
 
-def send_password_reset_email(recipient: str, reset_url: str) -> bool:
-    """Send a reset link. Returns False if SMTP is not configured."""
+def send_password_reset_email(recipient: str, code: str) -> bool:
+    """Send a one-time reset code. Returns False if SMTP is not configured."""
     host = os.getenv("SMTP_HOST")
     username = os.getenv("SMTP_USERNAME")
     password = os.getenv("SMTP_PASSWORD")
@@ -23,12 +23,13 @@ def send_password_reset_email(recipient: str, reset_url: str) -> bool:
         port = int(os.getenv("SMTP_PORT", "587"))
         timeout = float(os.getenv("SMTP_TIMEOUT_SECONDS", "10"))
         message = EmailMessage()
-        message["Subject"] = "Reset your FitBuddy password"
+        message["Subject"] = "Your FitBuddy password reset code"
         message["From"] = sender
         message["To"] = recipient
         message.set_content(
             "We received a request to reset your FitBuddy password.\n\n"
-            f"Use this one-time link within 30 minutes:\n{reset_url}\n\n"
+            f"Your one-time verification code is: {code}\n\n"
+            "Enter this code on the FitBuddy password recovery page within 30 minutes.\n\n"
             "If you did not request this, you can ignore this email."
         )
 

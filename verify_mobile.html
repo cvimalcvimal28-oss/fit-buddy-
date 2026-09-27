@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Verify your FitBuddy mobile number.">
+  <link rel="icon" type="image/svg+xml" href="/static/images/fitbuddy-logo.svg">
+  <title>Verify your mobile — FitBuddy</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="auth-page">
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+  <header class="masthead">
+    <a class="brand" href="/login" aria-label="FitBuddy sign in">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.svg" alt="FitBuddy">
+    </a>
+    <nav aria-label="Account navigation"><a href="/login">Sign in</a><a href="/register">Create account</a></nav>
+    <div class="header-status"><span></span> MOBILE VERIFICATION</div>
+  </header>
+  <main class="auth-layout">
+    <section class="hero-copy auth-copy">
+      <p class="eyebrow"><span>SECURE SIGN-IN</span> / SMS CODE</p>
+      <h1>One more<br><em>step.</em></h1>
+      <p class="hero-description">{% if purpose == "registration" %}Enter the six-digit code to finish creating your verified account.{% elif purpose == "enrollment" %}Enter the six-digit code to add this verified phone to your account.{% else %}Enter the six-digit code we sent to your verified mobile number.{% endif %}</p>
+    </section>
+    <section class="card form-card auth-card" aria-labelledby="verify-title">
+      <div class="form-card-head">
+        <div><p class="eyebrow"><span>VERIFY MOBILE</span></p><h2 id="verify-title">Check your messages.</h2></div>
+        <span class="card-index" aria-hidden="true">FB / 06</span>
+      </div>
+      {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+      <form action="/verify-mobile" method="post">
+        <div class="field">
+          <label for="code">SIX-DIGIT SMS CODE</label>
+          <input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="000000" required autofocus>
+        </div>
+        <div class="form-footer auth-submit">
+          <button type="submit" class="btn"><span>Verify and continue</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+      <p class="auth-switch">Codes are time-limited. If it expired, restart sign-in or account creation to send another.</p>
+      <p class="auth-switch"><a href="{% if purpose == 'enrollment' %}/{% elif purpose == 'registration' %}/register{% else %}/login{% endif %}">Cancel and return</a></p>
+    </section>
+  </main>
+  <footer class="site-foot">
+    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.svg" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="/login">Sign in ↗</a>
+  </footer>
+</body>
+</html>

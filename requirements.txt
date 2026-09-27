@@ -6,3 +6,4 @@ python-multipart
 google-genai
 python-dotenv
 itsdangerous
+psycopg[binary]>=3.2,<4

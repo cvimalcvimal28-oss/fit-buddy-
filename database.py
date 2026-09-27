@@ -50,6 +50,21 @@ def init_db():
             connection.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
         if "email" not in user_columns:
             connection.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(254)"))
+        if "mobile_phone" not in user_columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN mobile_phone VARCHAR(20)"))
         connection.execute(
             text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)")
         )
+    reset_columns = {
+        column["name"] for column in inspect(engine).get_columns("password_reset_tokens")
+    }
+    if "token_salt" not in reset_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE password_reset_tokens ADD COLUMN token_salt VARCHAR(32)")
+            )
+    if "attempts" not in reset_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE password_reset_tokens ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0")
+            )
