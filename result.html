@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <title>FitBuddy — {{ user.name }}'s Plan</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body>
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="FitBuddy home">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="/">Build a plan</a>
+      <a href="/feedback">Feedback</a>
+      <a href="/view-all-users">Coach view <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="header-actions">
+      <div class="header-status"><span></span> YOUR PLAN IS READY</div>
+      <form action="/logout" method="post"><button class="logout-button" type="submit">Sign out</button></form>
+    </div>
+  </header>
+
+  <main class="wrap result-wrap">
+    <section class="result-intro">
+      <p class="eyebrow"><span>YOUR WEEK</span> / BUILT AROUND YOU</p>
+      <h1>Let's get<br><em>moving, {{ user.name }}.</em></h1>
+      <p>Your next seven days, laid out one session at a time.</p>
+    </section>
+
+    <div class="summary-strip">
+      <div class="stat">
+        <div class="num">{{ user.age }}</div>
+        <div class="label">Age</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ user.weight }}kg</div>
+        <div class="label">Weight</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ user.fitness_goal }}</div>
+        <div class="label">Goal</div>
+      </div>
+      <div class="stat">
+        <div class="num">{{ user.workout_intensity }}</div>
+        <div class="label">Intensity</div>
+      </div>
+    </div>
+
+    <div class="tip-block">
+      <span class="tip-label">A little recovery goes a long way</span>
+      <p>{{ nutrition_tip }}</p>
+    </div>
+
+    <aside class="ai-explainer result-ai-explainer" aria-labelledby="ai-explainer-title">
+      <span class="ai-explainer-icon" aria-hidden="true">✳</span>
+      <div>
+        <p class="eyebrow"><span>HOW YOUR PLAN COMES TOGETHER</span></p>
+        <h2 id="ai-explainer-title">Your goal in. A useful first draft out.</h2>
+        <p>FitBuddy can use Google Gemini to draft your workouts and recovery tip. Share a change below and Gemini can use your feedback to revise the week. If Gemini is unavailable, a built-in fallback keeps your plan accessible.</p>
+      </div>
+    </aside>
+
+    <div class="week-heading">
+      <div>
+        <p class="eyebrow"><span>YOUR SCHEDULE</span></p>
+        <h2 class="section-heading">{% if updated_plan %}Updated week{% else %}Your 7-day plan{% endif %}</h2>
+      </div>
+      <div class="week-progress" data-workout-progress data-plan-key="fitbuddy-plan-{{ plan_id }}{% if updated_plan %}-updated{% endif %}" data-total-days="{{ plan.days|length }}">
+        <div class="progress-copy"><span data-progress-count>0 of {{ plan.days|length }} sessions</span><span data-progress-percent>0%</span></div>
+        <div class="progress-track"><span data-progress-bar></span></div>
+      </div>
+    </div>
+    <p class="progress-hint">Tap a day when you're done. Your progress is saved on this device.</p>
+    {% for day in plan.days %}
+    <article class="day-entry" data-workout-day="{{ loop.index }}">
+      <div class="day-rail">
+        <div class="day-num">{{ "%02d"|format(loop.index) }}</div>
+        <button class="day-complete" type="button" data-complete-day aria-pressed="false" aria-label="Mark {{ day.day }} complete"><span aria-hidden="true">✓</span><span class="complete-label">DONE</span></button>
+      </div>
+      <div class="day-body">
+        <div class="day-heading">
+          <div><span class="day-kicker">{{ day.day }}</span><h3 class="day-focus">{{ day.focus }}</h3></div>
+          <div class="day-heading-side">
+            <span class="day-tag">{% if "rest" in day.focus|lower or "recovery" in day.focus|lower %}RECOVERY{% else %}TRAINING{% endif %}</span>
+          </div>
+        </div>
+        <div class="session-details">
+          <div class="session-stage"><span class="stage-label">Warm up</span><p>{{ day.warm_up }}</p></div>
+          <div class="session-stage"><span class="stage-label">Main workout</span><ul>
+            {% for exercise in day.main_workout %}
+            <li>{{ exercise }}</li>
+            {% endfor %}
+          </ul></div>
+          <div class="session-stage"><span class="stage-label">Cool down</span><p>{{ day.cooldown }}</p></div>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+
+    {% if updated_plan %}
+    <h2 class="section-heading">Your adjusted plan</h2>
+    <p class="feedback-applied">Feedback applied: "{{ feedback }}"</p>
+    {% for day in updated_plan.days %}
+    <article class="day-entry">
+      <div class="day-rail">
+        <div class="day-num">{{ "%02d"|format(loop.index) }}</div>
+      </div>
+      <div class="day-body">
+        <div class="day-heading">
+          <div><span class="day-kicker">{{ day.day }}</span><h3 class="day-focus">{{ day.focus }}</h3></div>
+        </div>
+        <div class="session-details">
+          <div class="session-stage"><span class="stage-label">Warm up</span><p>{{ day.warm_up }}</p></div>
+          <div class="session-stage"><span class="stage-label">Main workout</span><ul>
+            {% for exercise in day.main_workout %}
+            <li>{{ exercise }}</li>
+            {% endfor %}
+          </ul></div>
+          <div class="session-stage"><span class="stage-label">Cool down</span><p>{{ day.cooldown }}</p></div>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+    {% else %}
+    <div class="feedback-box">
+      <h3>Not quite right? Let's adjust.</h3>
+      <p>Your note is sent to Gemini to guide a revised plan. Be specific about what would work better for you.</p>
+      <form action="/submit-feedback" method="post">
+        <input type="hidden" name="plan_id" value="{{ plan_id }}">
+        <label class="visually-hidden" for="feedback">How would you like to adjust your plan?</label>
+        <textarea id="feedback" name="feedback" placeholder="e.g. Add more cardio and an extra recovery day." required></textarea>
+        <button type="submit" class="btn btn-outline"><span>Adjust my plan</span><span aria-hidden="true">↗</span></button>
+      </form>
+    </div>
+    {% endif %}
+
+    <a class="back-link" href="/">← Build another plan</a>
+  </main>
+
+  <footer class="site-foot"><a class="footer-brand" href="/" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a><span>SHOW UP FOR YOURSELF.</span><a href="/feedback">Share feedback ↗</a></footer>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Create your FitBuddy account and training profile.">
+  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <title>Create account — FitBuddy</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="/static/js/app.js" defer></script>
+</head>
+<body class="auth-page">
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+  <header class="masthead">
+    <a class="brand" href="/login" aria-label="FitBuddy sign in">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="/login">Sign in</a>
+      <a class="active" href="/register">Create account <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="header-status"><span></span> YOUR TRAINING STARTS HERE</div>
+  </header>
+
+  <main class="auth-layout register-layout">
+    <section class="hero-copy auth-copy">
+      <p class="eyebrow"><span>YOUR JOURNEY</span> / STARTS WITH YOU</p>
+      <h1>Make room<br>to <em>move.</em></h1>
+      <p class="hero-description">Create your profile, set a starting goal, and get a personal training plan whenever you're ready.</p>
+      <div class="hero-proof">
+        <div class="proof-icon" aria-hidden="true">✳</div>
+        <div><strong>Made for your starting point.</strong><span>Update your profile as your goals change.</span></div>
+      </div>
+    </section>
+
+    <section class="card form-card auth-card register-card" aria-labelledby="register-title">
+      <div class="form-card-head">
+        <div>
+          <p class="eyebrow"><span>NEW ACCOUNT</span></p>
+          <h2 id="register-title">Let's get started.</h2>
+        </div>
+        <span class="card-index" aria-hidden="true">FB / 02</span>
+      </div>
+      <p class="card-sub">Set up your training card and sign-in details.</p>
+      {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+      <form action="/register" method="post">
+        <div class="field">
+          <label for="name">YOUR NAME</label>
+          <input type="text" id="name" name="name" placeholder="e.g. Alex Morgan" autocomplete="name" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="email">EMAIL ADDRESS</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" maxlength="254" required>
+        </div>
+        <div class="row-two">
+          <div class="field">
+            <label for="age">AGE <span class="unit">YEARS</span></label>
+            <input type="number" id="age" name="age" min="10" max="90" placeholder="28" inputmode="numeric" required>
+          </div>
+          <div class="field">
+            <label for="weight">WEIGHT <span class="unit">KG</span></label>
+            <input type="number" id="weight" name="weight" min="25" max="250" placeholder="70" inputmode="numeric" required>
+          </div>
+        </div>
+        <div class="row-two">
+          <div class="field">
+            <label for="fitness_goal">FITNESS GOAL</label>
+            <select id="fitness_goal" name="fitness_goal" required>
+              <option value="Weight Loss">Weight loss</option>
+              <option value="Muscle Gain">Muscle gain</option>
+              <option value="General Wellness" selected>Everyday wellness</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="workout_intensity">STARTING PACE</label>
+            <select id="workout_intensity" name="workout_intensity" required>
+              <option value="Low">Easy does it</option>
+              <option value="Medium" selected>Find my rhythm</option>
+              <option value="High">Ready to push</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="password">CREATE PASSWORD <span class="unit">10+ CHARACTERS</span></label>
+          <div class="password-input-wrap">
+            <input type="password" id="password" name="password" autocomplete="new-password" minlength="10" maxlength="128" required data-password-input>
+            <button class="password-toggle" type="button" data-password-toggle aria-controls="password" aria-pressed="false"><span>Show</span></button>
+          </div>
+        </div>
+        <div class="field password-field">
+          <label for="password_confirm">CONFIRM PASSWORD</label>
+          <div class="password-input-wrap">
+            <input type="password" id="password_confirm" name="password_confirm" autocomplete="new-password" maxlength="128" required data-password-input>
+            <button class="password-toggle" type="button" data-password-toggle aria-controls="password_confirm" aria-pressed="false"><span>Show</span></button>
+          </div>
+        </div>
+        <div class="form-footer auth-submit">
+          <button type="submit" class="btn"><span>Create my account</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+      <p class="auth-switch">Already have an account? <a href="/login">Sign in</a></p>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <a class="footer-brand" href="/login" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="/login">Sign in ↗</a>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Share feedback with the FitBuddy team.">
+  <link rel="icon" type="image/png" href="/static/images/fitbuddy-logo.png">
+  <title>FitBuddy — Your feedback</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="FitBuddy home">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.png" alt="FitBuddy">
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="/">Build a plan</a>
+      <a class="active" href="/feedback">Feedback</a>
+      <a href="/view-all-users">Coach view <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="header-actions">
+      <div class="header-status"><span></span> YOUR VOICE MATTERS</div>
+      <form action="/logout" method="post"><button class="logout-button" type="submit">Sign out</button></form>
+    </div>
+  </header>
+
+  <main class="wrap feedback-page">
+    <section class="result-intro">
+      <p class="eyebrow"><span>FITBUDDY / FEEDBACK</span> / YOUR VOICE MATTERS</p>
+      <h1>Help us get<br><em>better with you.</em></h1>
+      <p>Your feedback is saved for the FitBuddy team and helps us improve your experience.</p>
+    </section>
+
+    {% if submitted %}
+    <div class="feedback-success" role="status">
+      <span class="feedback-success-icon" aria-hidden="true">✓</span>
+      <div>
+        <h2>Thanks for sharing, {{ user.name }}.</h2>
+        <p>Your feedback was saved automatically. We appreciate you helping FitBuddy improve.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <section class="feedback-form-card" aria-labelledby="feedback-title">
+      <div class="form-card-head">
+        <div>
+          <p class="eyebrow"><span>QUICK CHECK-IN</span></p>
+          <h2 id="feedback-title">How was your experience?</h2>
+        </div>
+        <span class="card-index" aria-hidden="true">FB / 03</span>
+      </div>
+      {% if request.query_params.get("error") == "invalid" %}
+      <p class="feedback-error" role="alert">Please choose a topic and share a short comment.</p>
+      {% endif %}
+      <form action="/feedback" method="post">
+        <fieldset class="rating-field">
+          <legend>YOUR RATING</legend>
+          <div class="rating-options">
+            {% for value, label in [(5, "Excellent"), (4, "Good"), (3, "Okay"), (2, "Could be better"), (1, "Poor")] %}
+            <label class="rating-option">
+              <input type="radio" name="rating" value="{{ value }}" required>
+              <span class="rating-number">{{ value }}</span>
+              <span>{{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="category">WHAT IS THIS ABOUT?</label>
+          <select id="category" name="category" required>
+            <option value="" disabled selected>Select a topic</option>
+            <option>Workout plan</option>
+            <option>Website experience</option>
+            <option>Gemini AI</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="message">YOUR FEEDBACK</label>
+          <textarea id="message" name="message" maxlength="2000" placeholder="Tell us what worked well or what we could improve..." required></textarea>
+          <p class="field-hint">Your feedback is shared with the FitBuddy coach team.</p>
+        </div>
+
+        <div class="feedback-submit-row">
+          <a class="back-link" href="/">← Back to your training</a>
+          <button type="submit" class="btn"><span>Send feedback</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <a class="footer-brand" href="/" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.png" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="/">Build a plan ↗</a>
+  </footer>
+</body>
+</html>
