@@ -8,9 +8,22 @@ import os
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./fitbuddy.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip() or "sqlite:///./fitbuddy.db"
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
-engine_options = {"connect_args": {"check_same_thread": False}} if DATABASE_URL.startswith("sqlite") else {}
+engine_options = {"pool_pre_ping": True}
+if DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
+else:
+    engine_options.update(
+        pool_size=max(1, int(os.getenv("DB_POOL_SIZE", "5"))),
+        max_overflow=max(0, int(os.getenv("DB_MAX_OVERFLOW", "10"))),
+        pool_timeout=max(1, int(os.getenv("DB_POOL_TIMEOUT", "30"))),
+        pool_recycle=max(60, int(os.getenv("DB_POOL_RECYCLE", "1800"))),
+    )
 engine = create_engine(DATABASE_URL, **engine_options)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -37,6 +50,21 @@ def init_db():
             connection.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(256)"))
         if "email" not in user_columns:
             connection.execute(text("ALTER TABLE users ADD COLUMN email VARCHAR(254)"))
+        if "mobile_phone" not in user_columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN mobile_phone VARCHAR(20)"))
         connection.execute(
             text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)")
         )
+    reset_columns = {
+        column["name"] for column in inspect(engine).get_columns("password_reset_tokens")
+    }
+    if "token_salt" not in reset_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE password_reset_tokens ADD COLUMN token_salt VARCHAR(32)")
+            )
+    if "attempts" not in reset_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE password_reset_tokens ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0")
+            )

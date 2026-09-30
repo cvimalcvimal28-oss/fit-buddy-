@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Verify a mobile number for FitBuddy sign-in.">
+  <link rel="icon" type="image/svg+xml" href="/static/images/fitbuddy-logo.svg">
+  <title>Add mobile verification — FitBuddy</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="auth-page">
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="FitBuddy home">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.svg" alt="FitBuddy">
+    </a>
+    <nav aria-label="Account navigation"><a href="/">My plan</a></nav>
+    <div class="header-status"><span></span> ACCOUNT SECURITY</div>
+  </header>
+  <main class="auth-layout">
+    <section class="hero-copy auth-copy">
+      <p class="eyebrow"><span>ACCOUNT SECURITY</span> / MOBILE OTP</p>
+      <h1>Secure your<br><em>sign-in.</em></h1>
+      <p class="hero-description">Verify a phone you control. FitBuddy will text a one-time code whenever you sign in.</p>
+    </section>
+    <section class="card form-card auth-card" aria-labelledby="enroll-title">
+      <div class="form-card-head">
+        <div><p class="eyebrow"><span>VERIFY MOBILE</span></p><h2 id="enroll-title">Add your number.</h2></div>
+        <span class="card-index" aria-hidden="true">FB / 07</span>
+      </div>
+      {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+      <form action="/verify-mobile/enroll" method="post">
+        <div class="field">
+          <label for="mobile_phone">MOBILE NUMBER <span class="unit">WITH COUNTRY CODE</span></label>
+          <input type="tel" id="mobile_phone" name="mobile_phone" placeholder="+14155552671" autocomplete="tel" maxlength="24" required autofocus>
+        </div>
+        <div class="form-footer auth-submit">
+          <button type="submit" class="btn"><span>Text me a verification code</span><span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+      <p class="auth-switch"><a href="/">Cancel and return to FitBuddy</a></p>
+    </section>
+  </main>
+  <footer class="site-foot">
+    <a class="footer-brand" href="/" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.svg" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="/">My plan ↗</a>
+  </footer>
+</body>
+</html>

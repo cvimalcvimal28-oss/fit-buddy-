@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100d18">
+  <meta name="description" content="Build a practical seven-day fitness plan around your goal and starting pace.">
+  <link rel="icon" type="image/svg+xml" href="/static/images/fitbuddy-logo.svg">
+  <title>FitBuddy — Your week of movement</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/netlify.css">
+  <script src="/static/js/netlify-app.js" defer></script>
+</head>
+<body class="home-page netlify-page">
+  <div class="gym-scene" aria-hidden="true">
+    <figure class="scene-panel scene-panel-lunge"><img src="/static/images/gym-lunge.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-lift"><img src="/static/images/gym-lift.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-pullup"><img src="/static/images/gym-pullup.jpeg" alt=""></figure>
+    <figure class="scene-panel scene-panel-dumbbells"><img src="/static/images/gym-dumbbells.jpeg" alt=""></figure>
+  </div>
+  <div class="hazard-bar"></div>
+
+  <header class="masthead">
+    <a class="brand" href="#top" aria-label="FitBuddy home">
+      <img class="brand-logo" src="/static/images/fitbuddy-logo.svg" alt="FitBuddy">
+    </a>
+    <nav aria-label="Main navigation">
+      <a class="active" href="#builder">Build a plan</a>
+      <a href="#approach">Our approach</a>
+      <a href="#feedback">Feedback</a>
+    </nav>
+    <div class="header-status"><span></span> YOUR TRAINING STARTS HERE</div>
+  </header>
+
+  <main id="top">
+    <div class="home-layout">
+      <section class="hero-copy" aria-labelledby="hero-title">
+        <p class="eyebrow"><span>YOUR NEXT CHAPTER</span> / STARTS HERE</p>
+        <h1 id="hero-title">Stronger<br>starts <em>with you.</em></h1>
+        <p class="hero-description">A plan should fit your life, your pace, and the reason you started. Choose a goal and make a week of movement your own.</p>
+        <div class="hero-proof">
+          <div class="proof-icon" aria-hidden="true">✳</div>
+          <div><strong>One week. One clear starting point.</strong><span>Simple, practical, ready when you are.</span></div>
+        </div>
+        <div class="hero-note">
+          <span class="note-line" aria-hidden="true"></span>
+          <p>Progress isn't a straight line.<br><strong>Just keep showing up.</strong></p>
+        </div>
+        <div class="hero-stamp" aria-hidden="true"><span>MOVE<br>WITH<br>INTENT</span><span class="stamp-star">✳</span></div>
+      </section>
+
+      <section class="card form-card" id="builder" aria-labelledby="form-title">
+        <div class="form-card-head">
+          <div><p class="eyebrow"><span>YOUR TRAINING CARD</span></p><h2 id="form-title">Let's make it yours.</h2></div>
+          <span class="card-index" aria-hidden="true">FB / 01</span>
+        </div>
+        <p class="card-sub">Pick a goal and starting pace. No account or health details needed.</p>
+        <form id="plan-form">
+          <div class="field">
+            <label for="name">YOUR NAME <span class="unit">OPTIONAL</span></label>
+            <input type="text" id="name" name="name" placeholder="e.g. Alex" autocomplete="given-name" maxlength="60">
+          </div>
+          <div class="field">
+            <label for="fitness_goal">WHAT ARE YOU WORKING TOWARD?</label>
+            <select id="fitness_goal" name="fitness_goal" required>
+              <option value="Weight Loss">Weight loss</option>
+              <option value="Muscle Gain">Muscle gain</option>
+              <option value="General Wellness" selected>Everyday wellness</option>
+            </select>
+            <p class="field-hint" id="goal-hint">Build a balanced week of strength, movement, and recovery.</p>
+          </div>
+          <div class="field">
+            <label for="workout_intensity">HOW DO YOU WANT TO GET STARTED?</label>
+            <select id="workout_intensity" name="workout_intensity" required>
+              <option value="Low">Easy does it</option>
+              <option value="Medium" selected>Find my rhythm</option>
+              <option value="High">Ready to push</option>
+            </select>
+          </div>
+          <div class="form-footer">
+            <p><span class="lock-icon" aria-hidden="true">◈</span> Your plan stays in this browser.</p>
+            <button type="submit" class="btn"><span>Build my 7-day plan</span><span aria-hidden="true">↗</span></button>
+          </div>
+          <p class="form-progress" id="form-status" role="status" aria-live="polite">Choose your starting point to get moving.</p>
+        </form>
+      </section>
+    </div>
+
+    <section class="plan-panel" id="plan-panel" aria-labelledby="plan-title" hidden>
+      <div class="result-intro">
+        <p class="eyebrow"><span>YOUR WEEK</span> / BUILT AROUND YOU</p>
+        <h1 id="plan-title">Let's get<br><em>moving.</em></h1>
+        <p id="plan-intro">A practical first draft for the week ahead.</p>
+      </div>
+      <div class="summary-strip" id="plan-summary"></div>
+      <div class="tip-block"><span class="tip-label">A little recovery goes a long way</span><p id="recovery-tip"></p></div>
+      <div class="week-heading">
+        <div><p class="eyebrow"><span>YOUR SCHEDULE</span></p><h2 class="section-heading">Your 7-day plan</h2></div>
+        <div class="week-progress" id="week-progress">
+          <div class="progress-copy"><span id="progress-count">0 of 7 sessions</span><span id="progress-percent">0%</span></div>
+          <div class="progress-track"><span id="progress-bar"></span></div>
+        </div>
+      </div>
+      <p class="progress-hint">Tap a day when you're done. Progress is saved on this device.</p>
+      <div id="workout-days"></div>
+      <div class="plan-actions">
+        <button class="btn btn-outline" id="print-plan" type="button"><span>Print this week</span><span aria-hidden="true">↗</span></button>
+        <button class="text-button" id="edit-plan" type="button">Edit my starting point</button>
+      </div>
+    </section>
+
+    <aside class="ai-explainer netlify-note">
+      <span class="ai-explainer-icon" aria-hidden="true">✳</span>
+      <div>
+        <p class="eyebrow"><span>A NOTE ABOUT THIS VERSION</span></p>
+        <h2>Simple plans, right in your browser.</h2>
+        <p>This Netlify edition is a static site: it builds a practical sample plan without sending your details anywhere. Plans and checkmarks are saved only in this browser. Sign-in, coach tools, shared feedback, and Gemini generation need a separate backend and are not included here. Adapt any movement to your comfort; this general plan is not medical advice.</p>
+      </div>
+    </aside>
+
+    <section class="principles" id="approach" aria-label="The FitBuddy approach">
+      <div><span>01</span><strong>MADE FOR YOU</strong><p>Your goal, your starting point.</p></div>
+      <div><span>02</span><strong>BUILT FOR REAL LIFE</strong><p>A balanced week, not a bootcamp.</p></div>
+      <div><span>03</span><strong>BETTER WITH FEEDBACK</strong><p>Small steps build strong habits.</p></div>
+    </section>
+
+    <section class="feedback-box netlify-feedback" id="feedback" aria-labelledby="feedback-title">
+      <h2 id="feedback-title">Help us make FitBuddy better.</h2>
+      <p>This preview has no server to receive messages. Your note is saved only in this browser.</p>
+      <form id="feedback-form">
+        <div class="field">
+          <label for="feedback">YOUR NOTE <span class="unit">OPTIONAL</span></label>
+          <textarea id="feedback" name="feedback" maxlength="1000" placeholder="What would make your week of movement work better?"></textarea>
+        </div>
+        <button class="btn btn-outline" type="submit"><span>Save feedback on this device</span><span aria-hidden="true">↗</span></button>
+        <p class="form-progress" id="feedback-status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-foot">
+    <a class="footer-brand" href="#top" aria-label="FitBuddy home"><img src="/static/images/fitbuddy-logo.svg" alt="FitBuddy"></a>
+    <span>SHOW UP FOR YOURSELF.</span>
+    <a href="#builder">Build a plan ↗</a>
+  </footer>
+</body>
+</html>
